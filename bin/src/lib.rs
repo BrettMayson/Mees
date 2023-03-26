@@ -1,5 +1,6 @@
 use std::{
     collections::{hash_map::Entry, HashMap},
+    net::SocketAddr,
     sync::Arc,
 };
 
@@ -14,10 +15,8 @@ mod action;
 mod id;
 mod registry;
 
-pub async fn run() {
-    let addr = "0.0.0.0:6454";
-    let listener = TcpListener::bind(&addr).await.unwrap();
-    println!("Listening on: {}", addr);
+pub async fn run(addr: SocketAddr) {
+    let listener = TcpListener::bind(addr).await.unwrap();
 
     let registry = Arc::new(registry::Registry::new());
     let conn_counter = std::sync::atomic::AtomicU32::new(0);

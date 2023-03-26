@@ -1,4 +1,4 @@
-use std::{collections::HashMap, future::Future, marker::PhantomData, pin::Pin};
+use std::{collections::HashMap, future::Future, marker::PhantomData, net::SocketAddr, pin::Pin};
 
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter},
@@ -53,7 +53,7 @@ impl Responder {
         unimplemented!()
     }
 
-    pub async fn run(&self, address: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn run(&self, address: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
         let mut conn = TcpStream::connect(address).await?;
         let (read, write) = conn.split();
         let mut read = BufReader::new(read);

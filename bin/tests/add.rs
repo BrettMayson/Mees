@@ -9,15 +9,20 @@ pub async fn add() {
     let mut responder = mees::Responder::new();
     responder.register(Add::handler(|add| async move { add.0 + add.1 }));
     tokio::spawn(async move {
-        responder.run("localhost:6454").await.unwrap();
+        responder
+            .run("localhost:6454".parse().expect("invalid address"))
+            .await
+            .unwrap();
     });
 
     tokio::spawn(async move {
-        mees_bin::run().await;
+        mees_bin::run("localhost:6454".parse().expect("invalid address")).await;
     });
 
     tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-    let client = mees::Client::new("localhost:6454").await.unwrap();
+    let client = mees::Client::new("localhost:6454".parse().expect("invalid address"))
+        .await
+        .unwrap();
     let res = Add(1, 2).request(&client).await.unwrap();
     assert_eq!(res, 3);
 }

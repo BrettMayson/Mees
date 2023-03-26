@@ -22,14 +22,17 @@ fn setup(c: &mut Criterion) {
 
     // Set up the server
     tokio.spawn(async move {
-        mees_bin::run().await;
+        mees_bin::run("localhost:6454".parse().expect("invalid address")).await;
     });
 
     // Set up the responder
     tokio.spawn(async move {
         let mut responder = mees::Responder::new();
         responder.register(Add::handler(|add| async move { add.0 + add.1 }));
-        responder.run("localhost:6454").await.unwrap();
+        responder
+            .run("localhost:6454".parse().expect("invalid address"))
+            .await
+            .unwrap();
     });
 
     {
@@ -37,7 +40,11 @@ fn setup(c: &mut Criterion) {
         tokio.block_on(tokio::time::sleep(std::time::Duration::from_millis(500)));
     }
 
-    let client = tokio.block_on(mees::Client::new("localhost:6454")).unwrap();
+    let client = tokio
+        .block_on(mees::Client::new(
+            "localhost:6454".parse().expect("invalid address"),
+        ))
+        .unwrap();
     c.bench_with_input(
         BenchmarkId::new("send_add", &client),
         &client,

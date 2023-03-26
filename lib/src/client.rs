@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
     fmt::Display,
+    net::SocketAddr,
     sync::{atomic::AtomicU32, Arc},
 };
 
@@ -24,7 +25,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn new(address: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn new(address: SocketAddr) -> Result<Self, Box<dyn std::error::Error>> {
         let (read, write) = TcpStream::connect(address).await?.into_split();
         let request_pending = Arc::new(RwLock::new(HashMap::new()));
         tokio::spawn(Self::run(read, request_pending.clone()));
