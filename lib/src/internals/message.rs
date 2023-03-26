@@ -25,6 +25,8 @@ pub enum Control {
     Pong,
     AuthPass(String),
     Disconnect,
+    Connect(Connect),
+    ConnectAck(ConnectAck),
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -54,5 +56,30 @@ impl Message {
         self.serialize(&mut rmp_serde::Serializer::new(&mut buf))
             .unwrap();
         buf
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum Connect {
+    New,
+    Existing(u32),
+}
+
+impl Connect {
+    pub fn into_message(self) -> Message {
+        Message {
+            payload: Payload::Control(Control::Connect(self)),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct ConnectAck(pub u32);
+
+impl ConnectAck {
+    pub fn into_message(self) -> Message {
+        Message {
+            payload: Payload::Control(Control::ConnectAck(self)),
+        }
     }
 }

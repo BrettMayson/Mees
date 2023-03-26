@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
     fmt::Display,
+    net::ToSocketAddrs,
     sync::{atomic::AtomicU32, Arc},
 };
 
@@ -8,17 +9,20 @@ use tokio::{
     io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter},
     net::{
         tcp::{OwnedReadHalf, OwnedWriteHalf},
-        TcpStream, ToSocketAddrs,
+        TcpStream,
     },
     sync::{oneshot::Sender, Mutex, RwLock},
 };
 
-use crate::{internals::Control, Message, RequestResponse, Requestable};
+use crate::{
+    internals::{Connection, Control},
+    Message, RequestResponse, Requestable,
+};
 
 type RequestPending = Arc<RwLock<HashMap<u32, Sender<RequestResponse>>>>;
 
 pub struct Client {
-    write: Mutex<BufWriter<OwnedWriteHalf>>,
+    connection: Connection,
     request_pending: RequestPending,
     request_pending_counter: AtomicU32,
 }
@@ -28,11 +32,10 @@ impl Client {
     where
         A: ToSocketAddrs,
     {
-        let (read, write) = TcpStream::connect(address).await?.into_split();
+        let connection = Connection::new(address).await?;
         let request_pending = Arc::new(RwLock::new(HashMap::new()));
-        tokio::spawn(Self::run(read, request_pending.clone()));
         Ok(Self {
-            write: Mutex::new(BufWriter::new(write)),
+            connection,
             request_pending,
             request_pending_counter: AtomicU32::new(0),
         })
@@ -50,14 +53,7 @@ impl Client {
         let (tx, rx) = tokio::sync::oneshot::channel();
         self.request_pending.write().await.insert(id, tx);
         let message = request.to_message(id);
-        let bytes = message.to_bytes();
-        let count = bytes.len();
-        {
-            let mut write = self.write.lock().await;
-            write.write_u32(count as u32).await.unwrap();
-            write.write_all(&bytes).await.unwrap();
-            write.flush().await.unwrap();
-        }
+        self.connection.send(&message).await.unwrap();
         rx.await.unwrap()
     }
 
@@ -89,14 +85,7 @@ impl Client {
     }
 
     pub async fn disconnect(self) {
-        let mut write = self.write.lock().await;
-        let message = Message {
-            payload: crate::Payload::Control(Control::Disconnect),
-        };
-        let bytes = message.to_bytes();
-        write.write_u32(bytes.len() as u32).await.unwrap();
-        write.write_all(&bytes).await.unwrap();
-        write.flush().await.unwrap();
+        self.connection.disconnect().await;
     }
 }
 

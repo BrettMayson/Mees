@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::atomic::AtomicU32};
 
-use mees::internals::{Control, Message, Payload};
+use mees::internals::{Connect, Control, Message, Payload};
 use tokio::sync::RwLock;
 
 use crate::{action::Action, id::ConnectionID};
@@ -86,9 +86,6 @@ impl Registry {
     pub async fn handle_message(&self, client: ConnectionID, msg: Message) -> Action {
         match msg.payload {
             Payload::Control(control) => match control {
-                Control::Ping => todo!(),
-                Control::Pong => todo!(),
-                Control::AuthPass(_) => todo!(),
                 Control::Disconnect => {
                     let mut events_subscribers = self.events_subscribers.write().await;
                     for (_, entry) in events_subscribers.iter_mut() {
@@ -99,6 +96,9 @@ impl Registry {
                         entry.retain(|&x| x != client);
                     }
                     Action::Ok
+                }
+                _ => {
+                    todo!()
                 }
             },
             Payload::RequestRegister(register) => {
