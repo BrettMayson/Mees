@@ -101,7 +101,9 @@ impl Parse for Data {
         } else {
             let content;
             braced!(content in input);
-            Ok(Self::Named(content.parse_terminated(Field::parse_named, Token![,])?))
+            Ok(Self::Named(
+                content.parse_terminated(Field::parse_named, Token![,])?,
+            ))
         }
     }
 }
