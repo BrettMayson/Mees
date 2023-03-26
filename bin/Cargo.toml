@@ -1,0 +1,18 @@
+[package]
+name = "mees-bin"
+version = "0.1.0"
+authors = ["Brett Mayson <brett@mayson.io>"]
+edition = "2021"
+
+[dependencies]
+mees = { path = "../lib" }
+
+tokio = { version = "1.26.0", features = ["full"] }
+
+[dev-dependencies]
+serde = { version = "1.0.158", features = ["derive"] }
+criterion = { version = "0.4", features = ["html_reports", "async_tokio"] }
+
+[[bench]]
+name = "add"
+harness = false
