@@ -1,8 +1,8 @@
-use std::{collections::HashMap, future::Future, marker::PhantomData, net::SocketAddr, pin::Pin};
+use std::{collections::HashMap, future::Future, marker::PhantomData, pin::Pin};
 
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter},
-    net::TcpStream,
+    net::{TcpStream, ToSocketAddrs},
 };
 
 use crate::{
@@ -53,7 +53,10 @@ impl Responder {
         unimplemented!()
     }
 
-    pub async fn run(&self, address: SocketAddr) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn run<A>(&self, address: A) -> Result<(), Box<dyn std::error::Error>>
+    where
+        A: ToSocketAddrs,
+    {
         let mut conn = TcpStream::connect(address).await?;
         let (read, write) = conn.split();
         let mut read = BufReader::new(read);

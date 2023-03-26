@@ -1,13 +1,12 @@
 use std::{
     collections::{hash_map::Entry, HashMap},
-    net::SocketAddr,
     sync::Arc,
 };
 
 use mees::internals::Message;
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt, BufReader, BufWriter},
-    net::TcpListener,
+    net::{TcpListener, ToSocketAddrs},
     sync::RwLock,
 };
 
@@ -15,7 +14,10 @@ mod action;
 mod id;
 mod registry;
 
-pub async fn run(addr: SocketAddr) {
+pub async fn run<A>(addr: A)
+where
+    A: ToSocketAddrs,
+{
     let listener = TcpListener::bind(addr).await.unwrap();
 
     let registry = Arc::new(registry::Registry::new());
